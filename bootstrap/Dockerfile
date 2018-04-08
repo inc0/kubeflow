@@ -11,7 +11,7 @@ RUN wget -q https://dl.google.com/dl/cloudsdk/channels/rapid/google-cloud-sdk.ta
     --path-update=false \
     --usage-reporting=false
 
-RUN ln -sf /google-cloud-sdk/bin/gcloud /usr/local/bin/gcloud    
+RUN ln -sf /google-cloud-sdk/bin/gcloud /usr/local/bin/gcloud
 
 # Install kubectl
 # We don't install via gcloud because we want 1.10 which is newer than what's in gcloud.
@@ -37,20 +37,20 @@ RUN cd /opt/ksonnet && \
 
 RUN mkdir -p /opt/kubeflow
 
+RUN wget https://github.com/kubeflow/kubeflow/archive/v0.1.0.tar.gz && tar -xvzf v0.1.0.tar.gz && mv kubeflow-0.1.0/ /opt/kubeflow/kubeflow
+
 COPY bootstraper /opt/kubeflow/
 COPY start.sh /opt/kubeflow/
 
 RUN chmod a+rx /opt/kubeflow/*
+COPY kubeconfig_fake.yml /root/.kube/config
 
-# Set default values for USER, USER_ID, GROUP_ID
-# The startup script will create the user and su to that user.
-# We delay the user creation until runtime so that user can specify
-# the user info at runtime.
+RUN cd / && ks init kubeflow && \
+    cd kubeflow && \
+    ks registry add kubeflow github.com/kubeflow/kubeflow/tree/master/kubeflow && \
+    ks pkg install kubeflow/core && \
+    ks pkg install kubeflow/tf-serving && \
+    ks pkg install kubeflow/tf-job
 
-# Work around for https://github.com/ksonnet/ksonnet/issues/298
-ENV USER kubeflow
-ENV USER_ID 1000
-ENV GROUP_ID 1000
-ENV GROUP kubeflow
-
-ENTRYPOINT ["/opt/kubeflow/start.sh"]
+WORKDIR /kubeflow
+CMD ["/opt/kubeflow/start.sh"]

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-IMG = gcr.io/kubeflow-images-staging/bootstraper
+IMG = inc0/kubeflow-bootstrapper
 
 TAG := $(shell date +v%Y%m%d)-$(shell git describe --tags --always --dirty)-$(shell git diff | shasum -a256 | cut -c -6)
 DIR := ${CURDIR}
@@ -22,22 +22,23 @@ all: build
 
 # To build without the cache set the environment variable
 # export DOCKER_BUILD_OPTS=--no-cache
-build:	
+build:
 	go build -i -o $(BUILDDIR)/bootstraper ${GOPATH}/src/github.com/kubeflow/kubeflow/bootstrap/cmd/bootstrap/main.go
 	cp -f ./Dockerfile $(BUILDDIR)/
 	cp -f ./start.sh $(BUILDDIR)/
-	docker build ${DOCKER_BUILD_OPTS} -t $(IMG):$(TAG) $(BUILDDIR)	
+	cp -f ./kubeconfig_fake.yml $(BUILDDIR)/
+	docker build ${DOCKER_BUILD_OPTS} -t $(IMG):$(TAG) $(BUILDDIR)
 	docker tag $(IMG):$(TAG) $(IMG):latest
-	@echo Built $(IMG):latest	
-	@echo Built $(IMG):$(TAG) 
+	@echo Built $(IMG):latest
+	@echo Built $(IMG):$(TAG)
 
 
 # Build but don't attach the latest tag. This allows manual testing/inspection of the image
 # first.
 push: build
-	gcloud docker -- push $(IMG):$(TAG)	
-	@echo Pushed $(IMG) with  :$(TAG) tags	
-	
+	gcloud docker -- push $(IMG):$(TAG)
+	@echo Pushed $(IMG) with  :$(TAG) tags
+
 push-latest: push
 	gcloud container images add-tag --quiet $(IMG):$(TAG) $(IMG):latest --verbosity=info
 	echo created $(IMG):latest
