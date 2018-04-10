@@ -39,18 +39,20 @@ RUN mkdir -p /opt/kubeflow
 
 RUN wget https://github.com/kubeflow/kubeflow/archive/v0.1.0.tar.gz && tar -xvzf v0.1.0.tar.gz && mv kubeflow-0.1.0/ /opt/kubeflow/kubeflow
 
-COPY bootstraper /opt/kubeflow/
-COPY start.sh /opt/kubeflow/
-
-RUN chmod a+rx /opt/kubeflow/*
 COPY kubeconfig_fake.yml /root/.kube/config
 
-RUN cd / && ks init kubeflow && \
+ARG github_token
+
+RUN export GITHUB_TOKEN=${github_token} && cd / && ks init kubeflow && \
     cd kubeflow && \
     ks registry add kubeflow github.com/kubeflow/kubeflow/tree/master/kubeflow && \
     ks pkg install kubeflow/core && \
     ks pkg install kubeflow/tf-serving && \
-    ks pkg install kubeflow/tf-job
+    ks pkg install kubeflow/tf-job && unset GITHUB_TOKEN
+COPY bootstraper /opt/kubeflow/
+COPY start.sh /opt/kubeflow/
+
+RUN chmod a+rx /opt/kubeflow/*
 
 WORKDIR /kubeflow
 CMD ["/opt/kubeflow/start.sh"]

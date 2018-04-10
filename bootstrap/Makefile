@@ -12,11 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-IMG = inc0/kubeflow-bootstrapper
+IMG = inc0/kubeflow-bootstraper
 
 TAG := $(shell date +v%Y%m%d)-$(shell git describe --tags --always --dirty)-$(shell git diff | shasum -a256 | cut -c -6)
 DIR := ${CURDIR}
 BUILDDIR := $(shell mktemp --tmpdir -d)
+
 
 all: build
 
@@ -27,7 +28,7 @@ build:
 	cp -f ./Dockerfile $(BUILDDIR)/
 	cp -f ./start.sh $(BUILDDIR)/
 	cp -f ./kubeconfig_fake.yml $(BUILDDIR)/
-	docker build ${DOCKER_BUILD_OPTS} -t $(IMG):$(TAG) $(BUILDDIR)
+	docker build ${DOCKER_BUILD_OPTS} -t $(IMG):$(TAG) --build-arg github_token=${GITHUB_TOKEN} $(BUILDDIR)
 	docker tag $(IMG):$(TAG) $(IMG):latest
 	@echo Built $(IMG):latest
 	@echo Built $(IMG):$(TAG)
